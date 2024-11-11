@@ -5,6 +5,7 @@
     <title>QRコードスキャナー</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
+        /* スタイルは省略（前述のスタイルを使用） */
         body, html {
             margin: 0;
             padding: 0;
@@ -15,19 +16,19 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.5s ease; /* 背景色変更のアニメーション */
+            transition: background-color 0.5s ease;
         }
         h1 {
             text-align: center;
             margin-bottom: 20px;
         }
         #qr-reader-container {
-            width: min(90vw, 90vh); /* ビューポート幅と高さの小さい方を選択 */
-            height: min(90vw, 90vh); /* 正方形を維持 */
-            max-width: 600px; /* 最大幅を設定 */
-            max-height: 600px; /* 最大高さを設定 */
+            width: min(90vw, 90vh);
+            height: min(90vw, 90vh);
+            max-width: 600px;
+            max-height: 600px;
             position: relative;
-            background-color: #000; /* 初期背景色を黒に設定 */
+            background-color: #000;
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
@@ -38,29 +39,27 @@
         #qr-reader {
             width: 100%;
             height: 100%;
-            background: transparent; /* 背景を透明に設定 */
+            background: transparent;
             position: relative;
         }
-        /* スキャンエリアのガイドライン */
         #qr-reader::before {
             content: "";
             position: absolute;
-            top: 25%; /* 上から25% */
-            left: 25%; /* 左から25% */
-            width: 50%; /* 幅50% */
-            height: 50%; /* 高さ50% */
-            border: 2px solid rgba(0, 255, 0, 0.7); /* 緑色に変更 */
+            top: 25%;
+            left: 25%;
+            width: 50%;
+            height: 50%;
+            border: 2px solid rgba(0, 255, 0, 0.7);
             box-sizing: border-box;
-            pointer-events: none; /* オーバーレイをクリックできないように */
+            pointer-events: none;
         }
-        /* ビデオ要素のスタイル */
         #qr-reader video {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover; /* ビデオのアスペクト比を維持 */
+            object-fit: cover;
         }
         #result {
             margin-top: 20px;
@@ -74,7 +73,7 @@
             width: 90%;
             max-width: 600px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            word-break: break-word; /* テキストの改行を許可 */
+            word-break: break-word;
         }
         #controls {
             margin-top: 20px;
@@ -95,26 +94,23 @@
         .button:hover {
             background-color: #0056b3;
         }
-        /* リセットボタンのスタイル */
         #resetButton {
             padding: 15px 30px;
             font-size: 1.2em;
             border: none;
             border-radius: 10px;
-            background-color: #dc3545; /* 赤色に変更 */
+            background-color: #dc3545;
             color: white;
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
             transition: background-color 0.3s ease;
         }
         #resetButton:hover {
-            background-color: #c82333; /* ホバー時の赤色を濃く */
+            background-color: #c82333;
         }
-
-        /* レスポンシブデザイン */
         @media (orientation: landscape) {
             #qr-reader-container {
-                width: min(80vw, 80vh); /* ビューポート幅と高さの小さい方を選択 */
+                width: min(80vw, 80vh);
                 height: min(80vw, 80vh);
             }
             #result {
@@ -126,10 +122,9 @@
                 font-size: 1em;
             }
         }
-
         @media (max-width: 768px) and (orientation: portrait) {
             #qr-reader-container {
-                width: min(80vw, 80vh); /* ビューポート幅と高さの小さい方を選択 */
+                width: min(80vw, 80vh);
                 height: min(80vw, 80vh);
             }
             #result {
@@ -157,13 +152,12 @@
     </div>
 
     <script>
-        // エラーハンドリング: エラーを画面に表示
+        // エラーハンドリング
         window.onerror = function(message, source, lineno, colno, error) {
             const resultDiv = document.getElementById('result');
-            resultDiv.style.backgroundColor = 'red'; // エラー時は赤色
+            resultDiv.style.backgroundColor = 'red';
             resultDiv.textContent = `エラー: ${message} at ${source}:${lineno}:${colno}`;
             resultDiv.style.display = 'block';
-            // 背景色を赤に変更
             document.body.style.backgroundColor = 'red';
             console.error("Unhandled error:", message, source, lineno, colno, error);
         };
@@ -183,10 +177,8 @@
         function showResult(message, color) {
             const resultDiv = document.getElementById('result');
             resultDiv.style.backgroundColor = color;
-            resultDiv.innerHTML = message; // textContentからinnerHTMLに変更
+            resultDiv.innerHTML = message;
             resultDiv.style.display = 'block';
-
-            // 背景色を変更
             document.body.style.backgroundColor = color;
         }
 
@@ -194,29 +186,30 @@
         function clearResult() {
             const resultDiv = document.getElementById('result');
             resultDiv.style.display = 'none';
-            document.body.style.backgroundColor = '#f0f0f0'; // 元の色に戻す
+            document.body.style.backgroundColor = '#f0f0f0';
         }
 
         /**
-         * QRコード内から特定の位置までの桁数をカウントしてセグメントを抽出する関数
+         * QRコード内から特定のパターンを検索し、その位置までの桁数をカウントする関数
          * @param {string} barcode - QRコードから読み取ったデータ
          * @returns {object|null} - 抽出したパターンと桁数のオブジェクト、またはnull
          */
         function extractImportantSegment(barcode) {
-            // スペースを除去して大文字に変換
+            // スペースを除去し、大文字に変換
             const cleanedBarcode = barcode.replace(/\s/g, '').toUpperCase();
             console.log(`全バーコードデータ（スペース除去後）: "${cleanedBarcode}"`);
 
-            // 検索したいパターンを配列で定義（大文字）
-            const patterns = Object.keys(productPatterns).map(p => p.toUpperCase());
+            // 検索したいパターンを定義
+            const patterns = ["5863S", "GFEYS"]; // 必要に応じて追加
 
             for (const pattern of patterns) {
                 const index = cleanedBarcode.indexOf(pattern);
                 if (index !== -1) {
-                    console.log(`検出されたパターン: "${pattern}" at position ${index}`);
-                    // 桁数をカウント（1から始まる場合）
+                    // パターンの終わりの位置までの桁数を計算
                     const digitCount = index + pattern.length;
+                    console.log(`パターン "${pattern}" が位置 ${index} に見つかりました。`);
                     console.log(`"${pattern}" までの桁数: ${digitCount}`);
+                    
                     return {
                         pattern: pattern,
                         digitCount: digitCount
@@ -225,7 +218,7 @@
             }
 
             console.warn("指定されたパターンが見つかりませんでした。");
-            return null; // 指定されたパターンが見つからない場合はnullを返す
+            return null;
         }
 
         /**
@@ -235,10 +228,10 @@
          */
         function classifyQRCode(decodedText) {
             const segmentInfo = extractImportantSegment(decodedText);
-            if (!segmentInfo) return null; // セグメントが抽出できない場合はnullを返す
+            if (!segmentInfo) return null;
 
             const pattern = segmentInfo.pattern;
-            return productPatterns[pattern] || null; // マッピングが存在すれば返す
+            return productPatterns[pattern] || null;
         }
 
         /**
@@ -248,31 +241,31 @@
          */
         function handleScanSuccess(decodedText, decodedResult) {
             console.log(`QRコード検出: "${decodedText}"`, decodedResult);
-            const product = classifyQRCode(decodedText.toUpperCase()); // 大文字に統一
+            const product = classifyQRCode(decodedText.toUpperCase());
 
             if (product) {
                 if (product === previousProduct) {
-                    // 同じ商品を2回読み取った場合は赤色に変更
+                    // 重複
                     console.log("Duplicate detected:", product);
                     showResult(`NG: ${product} を重複して読み取りました<br>${decodedText}`, 'red');
                 } else {
                     if (previousProduct !== null) {
-                        // 異なる商品を読み取った場合は緑色に変更
+                        // 新しい商品
                         console.log(`Product changed from ${previousProduct} to ${product}`);
-                        showResult(`OK: ${previousProduct} → ${product}<br>${decodedText}`, '#28a745'); // 緑色を鮮やかに変更
+                        showResult(`OK: ${previousProduct} → ${product}<br>${decodedText}`, '#28a745');
                     } else {
-                        // 最初のスキャンの場合
+                        // 初回
                         console.log(`First scan detected: ${product}`);
-                        showResult(`検出: ${product}<br>${decodedText}`, '#007BFF'); // 初期検出時は青色
+                        showResult(`検出: ${product}<br>${decodedText}`, '#007BFF');
                     }
                 }
                 previousProduct = product;
                 console.log("previousProduct updated to:", previousProduct);
-                stopScanner(); // スキャン後に停止
+                stopScanner();
             } else {
                 console.log("Product could not be classified for QR code:", decodedText);
                 showResult(`QRコードが認識できません<br>${decodedText}`, 'gray');
-                stopScanner(); // スキャン後に停止
+                stopScanner();
             }
         }
 
