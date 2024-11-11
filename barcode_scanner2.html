@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>QRコードスキャナー</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.5s ease; /* 背景色変更のアニメーション */
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #qr-reader {
+            width: 100%; /* 幅を100%に拡大 */
+            max-width: 600px; /* 最大幅を設定 */
+            height: 400px; /* 高さを設定 */
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            position: relative;
+            display: none; /* 初期状態では非表示 */
+        }
+        /* スキャンエリアのガイドライン */
+        #qr-reader::before {
+            content: "";
+            position: absolute;
+            top: 25%; /* 上から25% */
+            left: 10%; /* 左から10% */
+            width: 80%; /* 幅80% */
+            height: 50%; /* 高さ50% */
+            border: 2px solid rgba(0, 255, 0, 0.7); /* 緑色に変更 */
+            box-sizing: border-box;
+            pointer-events: none; /* オーバーレイをクリックできないように */
+        }
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.5em;
+            font-weight: bold;
+            display: none;
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            word-break: break-word; /* テキストの改行を許可 */
+        }
+        #controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 10px;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        /* リセットボタンのスタイル */
+        #resetButton {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 10px;
+            background-color: #dc3545; /* 赤色に変更 */
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: background-color 0.3s ease;
+        }
+        #resetButton:hover {
+            background-color: #c82333; /* ホバー時の赤色を濃く */
+        }
+
+        /* レスポンシブデザイン */
+        @media (orientation: landscape) {
+            #qr-reader {
+                width: 95vw; /* ビューポート幅の95%に拡大 */
+                height: 300px; /* ビューポート高さの設定 */
+            }
+            #result {
+                font-size: 1.2em;
+                padding: 15px;
+            }
+            .button, #resetButton {
+                padding: 12px 25px;
+                font-size: 1em;
+            }
+        }
+
+        @media (max-width: 768px) and (orientation: portrait) {
+            #qr-reader {
+                height: 35vh;
+            }
+            #result {
+                font-size: 1.2em;
+                padding: 15px;
+            }
+            .button, #resetButton {
+                padding: 12px 25px;
+                font-size: 1em;
+            }
+        }
+    </style>
+    <!-- HTML5-QrcodeのCDN -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+    <h1>QRコードスキャナー</h1>
+    <div id="qr-reader"></div>
+    <div id="result"></div>
+    <div id="controls">
+        <button id="scanButton" class="button">スキャン開始</button>
+        <button id="resetButton" class="button">リセット</button>
+    </div>
+
+    <script>
+        // エラーハンドリング: エラーを画面に表示
+        window.onerror = function(message, source, lineno, colno, error) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.backgroundColor = 'red'; // エラー時は赤色
+            resultDiv.textContent = `エラー: ${message} at ${source}:${lineno}:${colno}`;
+            resultDiv.style.display = 'block';
+            // 背景色を赤に変更
+            document.body.style.backgroundColor = 'red';
+            console.error("Unhandled error:", message, source, lineno, colno, error);
+        };
+
+        // 商品データのパターン定義
+        const productPatterns = {
+            "5863S": "X-92-122",
+            "GFEYS": "PLR-2"
+            // 必要に応じてパターンを追加
+        };
+
+        let previousProduct = null;
+        let isScanning = false;
+        let html5QrCode = null;
+
+        // 結果表示用の関数
+        function showResult(message, color) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.backgroundColor = color;
+            resultDiv.innerHTML = message; // textContentからinnerHTMLに変更
+            resultDiv.style.display = 'block';
+
+            // 背景色を変更
+            document.body.style.backgroundColor = color;
+        }
+
+        // 結果と背景色をクリアする関数
+        function clearResult() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'none';
+            document.body.style.backgroundColor = '#f0f0f0'; // 元の色に戻す
+        }
+
+        // バーコードの特定位置からセグメントを抽出する関数
+        function extractImportantSegment(barcode) {
+            // 左から4番目からの5桁を抽出（インデックスは0から開始）
+            if (barcode.length >= 19) { // 最低限必要な長さをチェック
+                return barcode.substring(14, 19); // インデックス4から8まで（5文字）
+            }
+            return null; // バーコードが短すぎる場合はnullを返す
+        }
+
+        // QRコードの分類関数
+        function classifyQRCode(decodedText) {
+            const segment = extractImportantSegment(decodedText);
+            if (!segment) return null; // セグメントが抽出できない場合はnullを返す
+
+            return productPatterns[segment] || null; // マッピングが存在すれば返す
+        }
+
+        // スキャン結果の処理
+        function handleScanSuccess(decodedText, decodedResult) {
+            console.log(`QRコード検出: ${decodedText}`, decodedResult);
+            const product = classifyQRCode(decodedText);
+
+            if (product) {
+                if (product === previousProduct) {
+                    // 同じ商品を2回読み取った場合は赤色に変更
+                    console.log("Duplicate detected:", product);
+                    showResult(`NG: ${product} を重複して読み取りました<br>${decodedText}`, 'red');
+                } else {
+                    if (previousProduct !== null) {
+                        // 異なる商品を読み取った場合は緑色に変更
+                        console.log(`Product changed from ${previousProduct} to ${product}`);
+                        showResult(`OK: ${previousProduct} → ${product}<br>${decodedText}`, '#28a745'); // 緑色を鮮やかに変更
+                    } else {
+                        // 最初のスキャンの場合
+                        console.log(`First scan detected: ${product}`);
+                        showResult(`検出: ${product}<br>${decodedText}`, '#007BFF'); // 初期検出時は青色
+                    }
+                }
+                previousProduct = product;
+                console.log("previousProduct updated to:", previousProduct);
+                stopScanner(); // スキャン後に停止
+            } else {
+                console.log("Product could not be classified for QR code:", decodedText);
+                showResult(`QRコードが認識できません<br>${decodedText}`, 'gray');
+                stopScanner(); // スキャン後に停止
+            }
+        }
+
+        function handleScanError(errorMessage) {
+            // エラー処理（必要に応じて実装）
+            console.warn(`QRコード読み取りエラー: ${errorMessage}`);
+        }
+
+        // スキャンの開始
+        function startScanner() {
+            if (isScanning) return;
+
+            // 結果表示をクリア
+            clearResult();
+
+            isScanning = true;
+            document.getElementById('scanButton').textContent = "スキャン停止";
+            document.getElementById('qr-reader').style.display = 'block'; // QRリーダーを表示
+
+            html5QrCode = new Html5Qrcode("qr-reader");
+            const qrCodeSuccessCallback = handleScanSuccess;
+            const qrCodeErrorCallback = handleScanError;
+
+            html5QrCode.start(
+                { facingMode: "environment" }, // バックカメラを使用
+                {
+                    fps: 10,    // 1秒あたりのフレーム数
+                    qrbox: { width: 250, height: 250 }  // QRコードスキャンエリアのサイズ
+                },
+                qrCodeSuccessCallback,
+                qrCodeErrorCallback
+            ).then(() => {
+                console.log("QRコードスキャナーが起動しました。");
+            }).catch(err => {
+                console.error("QRコードスキャナーの起動に失敗しました:", err);
+                alert("QRコードスキャナーの初期化に失敗しました。");
+                isScanning = false;
+                document.getElementById('scanButton').textContent = "スキャン開始";
+                document.getElementById('qr-reader').style.display = 'none'; // QRリーダーを非表示
+            });
+        }
+
+        // スキャンの停止
+        function stopScanner() {
+            if (!isScanning) return;
+
+            html5QrCode.stop().then(ignore => {
+                console.log("QRコードスキャナーが停止しました。");
+                isScanning = false;
+                document.getElementById('scanButton').textContent = "スキャン開始";
+                document.getElementById('qr-reader').style.display = 'none'; // QRリーダーを非表示
+            }).catch(err => {
+                console.error("QRコードスキャナーの停止に失敗しました:", err);
+            });
+        }
+
+        // スキャン開始ボタンのイベントリスナー
+        document.getElementById('scanButton').addEventListener('click', function() {
+            if (isScanning) {
+                stopScanner();
+            } else {
+                startScanner();
+            }
+        });
+
+        // リセットボタンのイベントリスナー
+        document.getElementById('resetButton').addEventListener('click', function() {
+            clearResult();
+            previousProduct = null;
+            console.log("previousProductがリセットされました。");
+            if (isScanning) {
+                stopScanner();
+                startScanner(); // リセット後にスキャンを再開
+            }
+        });
+
+        // 初期状態ではスキャン停止
+        clearResult();
+    </script>
+</body>
+</html>
