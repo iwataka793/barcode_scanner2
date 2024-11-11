@@ -208,7 +208,7 @@
                 文字列:     G 5 3 0 0 9 0 0 0 1 0 0 0 5 8 6 3 S ...
             */
             // セグメントが確実に特定の位置にある場合
-            const startIndex = 13; // インデックス13から開始
+            const startIndex = 14; // インデックス13から開始
             const segmentLength = 5; // 5文字を抽出
             if (barcode.length >= startIndex + segmentLength) { // バーコードの長さが十分か確認
                 return barcode.substring(startIndex, startIndex + segmentLength); // インデックス13から17まで（5文字）
