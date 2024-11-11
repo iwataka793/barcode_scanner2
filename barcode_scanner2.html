@@ -27,16 +27,18 @@
             max-width: 600px; /* 最大幅を設定 */
             max-height: 600px; /* 最大高さを設定 */
             position: relative;
-            display: none; /* 初期状態では非表示 */
-            background-color: #f0f0f0; /* 余白部分の背景色 */
+            background-color: #000; /* 初期背景色を黒に設定 */
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         #qr-reader {
             width: 100%;
             height: 100%;
-            background: #000;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            background: transparent; /* 背景を透明に設定 */
             position: relative;
         }
         /* スキャンエリアのガイドライン */
@@ -197,9 +199,9 @@
 
         // バーコードの特定位置からセグメントを抽出する関数
         function extractImportantSegment(barcode) {
-            // 左から4番目からの5桁を抽出（インデックスは0から開始）
-            if (barcode.length >= 19) { // 最低限必要な長さをチェック
-                return barcode.substring(14, 19); // インデックス4から8まで（5文字）
+            // "5863S" がインデックス12から始まる場合
+            if (barcode.length >= 19) { // "G53009000010005863S"は19文字
+                return barcode.substring(14, 19); // インデックス14から19まで（5文字）
             }
             return null; // バーコードが短すぎる場合はnullを返す
         }
@@ -257,11 +259,10 @@
 
             isScanning = true;
             document.getElementById('scanButton').textContent = "スキャン停止";
-            document.getElementById('qr-reader-container').style.display = 'block'; // QRリーダーを表示
 
-            html5QrCode = new Html5Qrcode("qr-reader");
-            const qrCodeSuccessCallback = handleScanSuccess;
-            const qrCodeErrorCallback = handleScanError;
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("qr-reader");
+            }
 
             html5QrCode.start(
                 { facingMode: "environment" }, // バックカメラを使用
@@ -269,8 +270,8 @@
                     fps: 10,    // 1秒あたりのフレーム数
                     qrbox: { width: 250, height: 250 }  // QRコードスキャンエリアのサイズ
                 },
-                qrCodeSuccessCallback,
-                qrCodeErrorCallback
+                handleScanSuccess,
+                handleScanError
             ).then(() => {
                 console.log("QRコードスキャナーが起動しました。");
             }).catch(err => {
@@ -278,7 +279,6 @@
                 alert("QRコードスキャナーの初期化に失敗しました。");
                 isScanning = false;
                 document.getElementById('scanButton').textContent = "スキャン開始";
-                document.getElementById('qr-reader-container').style.display = 'none'; // QRリーダーを非表示
             });
         }
 
@@ -290,7 +290,10 @@
                 console.log("QRコードスキャナーが停止しました。");
                 isScanning = false;
                 document.getElementById('scanButton').textContent = "スキャン開始";
-                document.getElementById('qr-reader-container').style.display = 'none'; // QRリーダーを非表示
+                // カメラ画面を黒く戻す
+                const qrReaderDiv = document.getElementById('qr-reader');
+                qrReaderDiv.innerHTML = ''; // ビデオ要素を削除
+                qrReaderDiv.style.backgroundColor = '#000'; // 背景色を黒に設定
             }).catch(err => {
                 console.error("QRコードスキャナーの停止に失敗しました:", err);
             });
@@ -318,6 +321,8 @@
 
         // 初期状態ではスキャン停止
         clearResult();
+        // カメラ画面を黒く設定
+        document.getElementById('qr-reader').style.backgroundColor = '#000';
     </script>
 </body>
 </html>
