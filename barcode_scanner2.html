@@ -198,8 +198,8 @@
         // バーコードの特定位置からセグメントを抽出する関数
         function extractImportantSegment(barcode) {
             // 左から4番目からの5桁を抽出（インデックスは0から開始）
-            if (barcode.length >= 9) { // 最低限必要な長さをチェック
-                return barcode.substring(4, 9); // インデックス4から8まで（5文字）
+            if (barcode.length >= 19) { // 最低限必要な長さをチェック
+                return barcode.substring(14, 19); // インデックス4から8まで（5文字）
             }
             return null; // バーコードが短すぎる場合はnullを返す
         }
