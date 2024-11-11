@@ -22,19 +22,22 @@
             margin-bottom: 20px;
         }
         #qr-reader-container {
-            width: 90vw; /* ビューポート幅の90% */
+            width: min(90vw, 90vh); /* ビューポート幅と高さの小さい方を選択 */
+            height: min(90vw, 90vh); /* 正方形を維持 */
             max-width: 600px; /* 最大幅を設定 */
+            max-height: 600px; /* 最大高さを設定 */
             position: relative;
             display: none; /* 初期状態では非表示 */
+            background-color: #f0f0f0; /* 余白部分の背景色 */
         }
         #qr-reader {
             width: 100%;
-            padding-top: 100%; /* 正方形を維持 */
-            position: relative;
+            height: 100%;
             background: #000;
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            position: relative;
         }
         /* スキャンエリアのガイドライン */
         #qr-reader::before {
@@ -109,7 +112,8 @@
         /* レスポンシブデザイン */
         @media (orientation: landscape) {
             #qr-reader-container {
-                width: 60vw; /* ビューポート幅の60% */
+                width: min(80vw, 80vh); /* ビューポート幅と高さの小さい方を選択 */
+                height: min(80vw, 80vh);
             }
             #result {
                 font-size: 1.2em;
@@ -123,7 +127,8 @@
 
         @media (max-width: 768px) and (orientation: portrait) {
             #qr-reader-container {
-                width: 80vw; /* ビューポート幅の80% */
+                width: min(80vw, 80vh); /* ビューポート幅と高さの小さい方を選択 */
+                height: min(80vw, 80vh);
             }
             #result {
                 font-size: 1.2em;
@@ -193,8 +198,8 @@
         // バーコードの特定位置からセグメントを抽出する関数
         function extractImportantSegment(barcode) {
             // 左から4番目からの5桁を抽出（インデックスは0から開始）
-            if (barcode.length >= 19) { // 最低限必要な長さをチェック
-                return barcode.substring(14, 19); // インデックス4から8まで（5文字）
+            if (barcode.length >= 9) { // 最低限必要な長さをチェック
+                return barcode.substring(4, 9); // インデックス4から8まで（5文字）
             }
             return null; // バーコードが短すぎる場合はnullを返す
         }
