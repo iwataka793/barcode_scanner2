@@ -162,11 +162,18 @@
             console.error("Unhandled error:", message, source, lineno, colno, error);
         };
 
+        // パターンごとの位置と長さを定義
+        const patternConfigs = {
+            "5863S": { startIndex: 13, length: 5 }, // 0ベース
+            "GFEYS": { startIndex: 25, length: 5 }
+            // 必要に応じて追加
+        };
+
         // 商品データのパターン定義
         const productPatterns = {
             "5863S": "X-92-122",
             "GFEYS": "PLR-2"
-            // 必要に応じてパターンを追加
+            // 必要に応じて追加
         };
 
         let previousProduct = null;
@@ -190,7 +197,7 @@
         }
 
         /**
-         * QRコード内から特定のパターンを検索し、その位置までの桁数をカウントする関数
+         * QRコード内から特定の位置にあるパターンを抽出する関数
          * @param {string} barcode - QRコードから読み取ったデータ
          * @returns {object|null} - 抽出したパターンと桁数のオブジェクト、またはnull
          */
@@ -199,25 +206,26 @@
             const cleanedBarcode = barcode.replace(/\s/g, '').toUpperCase();
             console.log(`全バーコードデータ（スペース除去後）: "${cleanedBarcode}"`);
 
-            // 検索したいパターンを定義
-            const patterns = ["5863S", "GFEYS"]; // 必要に応じて追加
+            // 各パターンごとにチェック
+            for (const [pattern, config] of Object.entries(patternConfigs)) {
+                const { startIndex, length } = config;
+                const extractedSegment = cleanedBarcode.substring(startIndex, startIndex + length);
+                console.log(`位置 ${startIndex} から抽出された文字列: "${extractedSegment}"`);
 
-            for (const pattern of patterns) {
-                const index = cleanedBarcode.indexOf(pattern);
-                if (index !== -1) {
-                    // パターンの終わりの位置までの桁数を計算
-                    const digitCount = index + pattern.length;
-                    console.log(`パターン "${pattern}" が位置 ${index} に見つかりました。`);
+                if (extractedSegment === pattern) {
+                    const digitCount = startIndex + length;
+                    console.log(`パターン "${pattern}" が正確に位置 ${startIndex} で検出されました。`);
                     console.log(`"${pattern}" までの桁数: ${digitCount}`);
-                    
                     return {
                         pattern: pattern,
                         digitCount: digitCount
                     };
+                } else {
+                    console.warn(`期待されるパターン "${pattern}" が位置 ${startIndex} に見つかりませんでした。`);
                 }
             }
 
-            console.warn("指定されたパターンが見つかりませんでした。");
+            console.warn("指定されたパターンが正確な位置で見つかりませんでした。");
             return null;
         }
 
