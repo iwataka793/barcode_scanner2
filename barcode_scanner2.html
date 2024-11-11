@@ -199,15 +199,17 @@
 
         // バーコードの特定位置からセグメントを抽出する関数
         function extractImportantSegment(barcode) {
+            // スペースを除去
+            const cleanedBarcode = barcode.replace(/\s/g, '');
+            console.log(`全バーコードデータ（スペース除去後）: "${cleanedBarcode}"`);
+
             // "5863S" がインデックス13から始まる場合
-            // バーコードの例: "G53009000010005863S05040407205 0288"
-            // インデックス (0ベース): 0:G, 1:5, 2:3, 3:0, 4:0, 5:9, 6:0, 7:0, 8:0, 9:1, 10:0, 11:0, 12:0, 13:5, 14:8, 15:6, 16:3, 17:S, ...
-            if (barcode.length >= 18) { // バーコードの長さが18文字以上か確認
-                const segment = barcode.substring(13, 18); // インデックス13から17までの5文字を抽出
-                console.log(`抽出されたセグメント: ${segment}`);
+            if (cleanedBarcode.length >= 18) { // バーコードの長さが18文字以上か確認
+                const segment = cleanedBarcode.substring(13, 18).toUpperCase(); // インデックス13から17までの5文字を抽出
+                console.log(`抽出されたセグメント: "${segment}"`);
                 return segment;
             }
-            console.warn(`バーコードの長さが不足しています: ${barcode.length}`);
+            console.warn(`バーコードの長さが不足しています: ${cleanedBarcode.length}`);
             return null; // バーコードが短すぎる場合はnullを返す
         }
 
@@ -221,7 +223,7 @@
 
         // スキャン結果の処理
         function handleScanSuccess(decodedText, decodedResult) {
-            console.log(`QRコード検出: ${decodedText}`, decodedResult);
+            console.log(`QRコード検出: "${decodedText}"`, decodedResult);
             const product = classifyQRCode(decodedText);
 
             if (product) {
