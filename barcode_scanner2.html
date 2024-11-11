@@ -197,20 +197,22 @@
             document.body.style.backgroundColor = '#f0f0f0'; // 元の色に戻す
         }
 
-        // バーコードの特定位置からセグメントを抽出する関数
+        // QRコード内から特定の文字列を検索して抽出する関数
         function extractImportantSegment(barcode) {
             // スペースを除去
             const cleanedBarcode = barcode.replace(/\s/g, '');
             console.log(`全バーコードデータ（スペース除去後）: "${cleanedBarcode}"`);
 
-            // "5863S" がインデックス13から始まる場合
-            if (cleanedBarcode.length >= 18) { // バーコードの長さが18文字以上か確認
-                const segment = cleanedBarcode.substring(13, 18).toUpperCase(); // インデックス13から17までの5文字を抽出
-                console.log(`抽出されたセグメント: "${segment}"`);
-                return segment;
+            // 定義されたパターンを検索
+            for (const pattern in productPatterns) {
+                if (cleanedBarcode.includes(pattern)) {
+                    console.log(`検出されたパターン: "${pattern}"`);
+                    return pattern;
+                }
             }
-            console.warn(`バーコードの長さが不足しています: ${cleanedBarcode.length}`);
-            return null; // バーコードが短すぎる場合はnullを返す
+
+            console.warn("指定されたパターンが見つかりませんでした。");
+            return null; // 指定されたパターンが見つからない場合はnullを返す
         }
 
         // QRコードの分類関数
