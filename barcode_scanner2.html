@@ -200,7 +200,7 @@
         // バーコードの特定位置からセグメントを抽出する関数
         function extractImportantSegment(barcode) {
             // "5863S" がインデックス12から始まる場合
-            if (barcode.length >= 19) { // "G53009000010005863S"は19文字
+            if (barcode.length >= 10) { // "G53009000010005863S"は19文字
                 return barcode.substring(14, 19); // インデックス14から19まで（5文字）
             }
             return null; // バーコードが短すぎる場合はnullを返す
