@@ -197,13 +197,17 @@
             document.body.style.backgroundColor = '#f0f0f0'; // 元の色に戻す
         }
 
-        // QRコード内から特定の文字列を検索して抽出する関数
+        /**
+         * QRコード内から特定の位置までの桁数をカウントしてセグメントを抽出する関数
+         * @param {string} barcode - QRコードから読み取ったデータ
+         * @returns {object|null} - 抽出したパターンと桁数のオブジェクト、またはnull
+         */
         function extractImportantSegment(barcode) {
-            // スペースを除去
+            // スペースを除去して大文字に変換
             const cleanedBarcode = barcode.replace(/\s/g, '').toUpperCase();
             console.log(`全バーコードデータ（スペース除去後）: "${cleanedBarcode}"`);
 
-            // 検索したいパターンを配列で定義
+            // 検索したいパターンを配列で定義（大文字）
             const patterns = Object.keys(productPatterns).map(p => p.toUpperCase());
 
             for (const pattern of patterns) {
@@ -212,7 +216,7 @@
                     console.log(`検出されたパターン: "${pattern}" at position ${index}`);
                     // 桁数をカウント（1から始まる場合）
                     const digitCount = index + pattern.length;
-                    console.log(`" ${pattern} "までの桁数: ${digitCount}`);
+                    console.log(`"${pattern}" までの桁数: ${digitCount}`);
                     return {
                         pattern: pattern,
                         digitCount: digitCount
@@ -224,7 +228,11 @@
             return null; // 指定されたパターンが見つからない場合はnullを返す
         }
 
-        // QRコードの分類関数
+        /**
+         * QRコードの分類関数
+         * @param {string} decodedText - 読み取ったQRコードのテキスト
+         * @returns {string|null} - 商品名、またはnull
+         */
         function classifyQRCode(decodedText) {
             const segmentInfo = extractImportantSegment(decodedText);
             if (!segmentInfo) return null; // セグメントが抽出できない場合はnullを返す
@@ -233,7 +241,11 @@
             return productPatterns[pattern] || null; // マッピングが存在すれば返す
         }
 
-        // スキャン結果の処理
+        /**
+         * スキャン結果の処理
+         * @param {string} decodedText - 読み取ったQRコードのテキスト
+         * @param {object} decodedResult - QRコードのデコード結果オブジェクト
+         */
         function handleScanSuccess(decodedText, decodedResult) {
             console.log(`QRコード検出: "${decodedText}"`, decodedResult);
             const product = classifyQRCode(decodedText.toUpperCase()); // 大文字に統一
@@ -264,12 +276,18 @@
             }
         }
 
+        /**
+         * スキャンエラーの処理
+         * @param {string} errorMessage - エラーメッセージ
+         */
         function handleScanError(errorMessage) {
             // エラー処理（必要に応じて実装）
             console.warn(`QRコード読み取りエラー: ${errorMessage}`);
         }
 
-        // スキャンの開始
+        /**
+         * スキャンの開始
+         */
         function startScanner() {
             if (isScanning) return;
 
@@ -301,7 +319,9 @@
             });
         }
 
-        // スキャンの停止
+        /**
+         * スキャンの停止
+         */
         function stopScanner() {
             if (!isScanning) return;
 
