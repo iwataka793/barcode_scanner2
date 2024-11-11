@@ -200,14 +200,23 @@
         // QRコード内から特定の文字列を検索して抽出する関数
         function extractImportantSegment(barcode) {
             // スペースを除去
-            const cleanedBarcode = barcode.replace(/\s/g, '');
+            const cleanedBarcode = barcode.replace(/\s/g, '').toUpperCase();
             console.log(`全バーコードデータ（スペース除去後）: "${cleanedBarcode}"`);
 
-            // 定義されたパターンを検索
-            for (const pattern in productPatterns) {
-                if (cleanedBarcode.includes(pattern)) {
-                    console.log(`検出されたパターン: "${pattern}"`);
-                    return pattern;
+            // 検索したいパターンを配列で定義
+            const patterns = Object.keys(productPatterns).map(p => p.toUpperCase());
+
+            for (const pattern of patterns) {
+                const index = cleanedBarcode.indexOf(pattern);
+                if (index !== -1) {
+                    console.log(`検出されたパターン: "${pattern}" at position ${index}`);
+                    // 桁数をカウント（1から始まる場合）
+                    const digitCount = index + pattern.length;
+                    console.log(`" ${pattern} "までの桁数: ${digitCount}`);
+                    return {
+                        pattern: pattern,
+                        digitCount: digitCount
+                    };
                 }
             }
 
@@ -217,16 +226,17 @@
 
         // QRコードの分類関数
         function classifyQRCode(decodedText) {
-            const segment = extractImportantSegment(decodedText);
-            if (!segment) return null; // セグメントが抽出できない場合はnullを返す
+            const segmentInfo = extractImportantSegment(decodedText);
+            if (!segmentInfo) return null; // セグメントが抽出できない場合はnullを返す
 
-            return productPatterns[segment] || null; // マッピングが存在すれば返す
+            const pattern = segmentInfo.pattern;
+            return productPatterns[pattern] || null; // マッピングが存在すれば返す
         }
 
         // スキャン結果の処理
         function handleScanSuccess(decodedText, decodedResult) {
             console.log(`QRコード検出: "${decodedText}"`, decodedResult);
-            const product = classifyQRCode(decodedText);
+            const product = classifyQRCode(decodedText.toUpperCase()); // 大文字に統一
 
             if (product) {
                 if (product === previousProduct) {
