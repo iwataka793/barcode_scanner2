@@ -199,19 +199,9 @@
 
         // バーコードの特定位置からセグメントを抽出する関数
         function extractImportantSegment(barcode) {
-            /*
-                バーコードのフォーマット例:
-                "G53009000010005863S05040407205"
-
-                "5863S" の位置はインデックス13から始まる（0ベース）
-                インデックス: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 ...
-                文字列:     G 5 3 0 0 9 0 0 0 1 0 0 0 5 8 6 3 S ...
-            */
-            // セグメントが確実に特定の位置にある場合
-            const startIndex = 14; // インデックス13から開始
-            const segmentLength = 5; // 5文字を抽出
-            if (barcode.length >= startIndex + segmentLength) { // バーコードの長さが十分か確認
-                return barcode.substring(startIndex, startIndex + segmentLength); // インデックス13から17まで（5文字）
+            // "5863S" がインデックス13から始まる場合
+            if (barcode.length >= 18) { // バーコードの長さが18文字以上か確認
+                return barcode.substring(13, 18); // インデックス13から17までの5文字を抽出
             }
             return null; // バーコードが短すぎる場合はnullを返す
         }
@@ -221,8 +211,7 @@
             const segment = extractImportantSegment(decodedText);
             if (!segment) return null; // セグメントが抽出できない場合はnullを返す
 
-            // マッピングが存在すれば返す
-            return productPatterns[segment] || null;
+            return productPatterns[segment] || null; // マッピングが存在すれば返す
         }
 
         // スキャン結果の処理
