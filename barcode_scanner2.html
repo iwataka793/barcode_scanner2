@@ -167,7 +167,7 @@
             {
                 startIndex: 14, // 0ベース
                 length: 5,
-                patterns: ["5863S", "GFEYS"] // この位置で期待されるパターン
+                patterns: ["5863S", "GFEYS"] // この位置に期待されるパターン
             }
             // 必要に応じて他の位置を追加
         ];
@@ -200,27 +200,28 @@
         }
 
         /**
-         * QRコード内から特定の位置にあるパターンを抽出する関数
+         * QRコード内からパターンを検索し、指定された位置で一致するか確認する関数
          * @param {string} barcode - QRコードから読み取ったデータ
          * @returns {object|null} - 抽出したパターンと桁数のオブジェクト、またはnull
          */
         function extractImportantSegment(barcode) {
             // スペースを除去し、大文字に変換
             const cleanedBarcode = barcode.replace(/\s/g, '').toUpperCase();
-            console.log(`全バーコードデータ（スペース除去後）: "${cleanedBarcode}"`);
+            console.log(`スペース除去後のデータ: "${cleanedBarcode}"`);
 
             // 各位置ごとにチェック
             for (const config of positionConfigs) {
                 const { startIndex, length, patterns } = config;
 
+                // 指定された位置からパターンを抽出
                 if (cleanedBarcode.length >= startIndex + length) {
                     const extractedSegment = cleanedBarcode.substring(startIndex, startIndex + length);
                     console.log(`位置 ${startIndex} から抽出された文字列: "${extractedSegment}"`);
 
-                    // 期待されるパターンのいずれかと一致するか確認
+                    // パターンリスト内に含まれているかをチェック
                     if (patterns.includes(extractedSegment)) {
                         const digitCount = startIndex + length;
-                        console.log(`パターン "${extractedSegment}" が位置 ${startIndex} で検出されました。`);
+                        console.log(`パターン "${extractedSegment}" が検出されました。`);
                         console.log(`"${extractedSegment}" までの桁数: ${digitCount}`);
                         return {
                             pattern: extractedSegment,
@@ -234,21 +235,29 @@
                 }
             }
 
-            console.warn("指定されたパターンが正確な位置で見つかりませんでした。");
+            console.warn("指定された位置でパターンが見つかりませんでした。");
             return null;
         }
 
         /**
          * QRコードの分類関数
          * @param {string} decodedText - 読み取ったQRコードのテキスト
-         * @returns {string|null} - 商品名、またはnull
+         * @returns {object|null} - 商品名と桁数のオブジェクト、またはnull
          */
         function classifyQRCode(decodedText) {
             const segmentInfo = extractImportantSegment(decodedText);
-            if (!segmentInfo) return null;
-
-            const pattern = segmentInfo.pattern;
-            return productPatterns[pattern] || null;
+            if (segmentInfo) {
+                const pattern = segmentInfo.pattern;
+                const digitCount = segmentInfo.digitCount;
+                const product = productPatterns[pattern] || null;
+                if (product) {
+                    return {
+                        product: product,
+                        digitCount: digitCount
+                    };
+                }
+            }
+            return null;
         }
 
         /**
@@ -258,22 +267,23 @@
          */
         function handleScanSuccess(decodedText, decodedResult) {
             console.log(`QRコード検出: "${decodedText}"`, decodedResult);
-            const product = classifyQRCode(decodedText.toUpperCase());
+            const classification = classifyQRCode(decodedText.toUpperCase());
 
-            if (product) {
+            if (classification) {
+                const { product, digitCount } = classification;
                 if (product === previousProduct) {
                     // 重複
                     console.log("Duplicate detected:", product);
-                    showResult(`NG: ${product} を重複して読み取りました<br>${decodedText}`, 'red');
+                    showResult(`NG: ${product} を重複して読み取りました<br>位置: ${digitCount}桁目まで<br>${decodedText}`, 'red');
                 } else {
                     if (previousProduct !== null) {
                         // 新しい商品
                         console.log(`Product changed from ${previousProduct} to ${product}`);
-                        showResult(`OK: ${previousProduct} → ${product}<br>${decodedText}`, '#28a745');
+                        showResult(`OK: ${previousProduct} → ${product}<br>位置: ${digitCount}桁目まで<br>${decodedText}`, '#28a745');
                     } else {
                         // 初回
                         console.log(`First scan detected: ${product}`);
-                        showResult(`検出: ${product}<br>${decodedText}`, '#007BFF');
+                        showResult(`検出: ${product}<br>位置: ${digitCount}桁目まで<br>${decodedText}`, '#007BFF');
                     }
                 }
                 previousProduct = product;
@@ -315,7 +325,7 @@
                 { facingMode: "environment" }, // バックカメラを使用
                 {
                     fps: 10,    // 1秒あたりのフレーム数
-                    qrbox: { width: 250, height: 250 }  // QRコードスキャンエリアのサイズ
+                    qrbox: { width: 300, height: 300 }  // QRコードスキャンエリアのサイズを拡大
                 },
                 handleScanSuccess,
                 handleScanError
